@@ -9,6 +9,7 @@ const {
     getTotalMemoryConsumption,
     getTotalNetworkConsumption
   } = require('../Controller/TaskMonitor.js');
+//   const {cleanupBackgroundProcesses} = require('../Controller/AlertController.js');
 // const { getFirewallLogs } = require('../Controller/AlertController.js')
   
   router.get('/cpu', getCpuUsage)
@@ -18,6 +19,7 @@ const {
   .get('/total/cpu', getTotalCPUConsumption)
   .get('/total/memory', getTotalMemoryConsumption)  
   .get('/total/network', getTotalNetworkConsumption)
+//   .get('/clear/temp', cleanupBackgroundProcesses)
 //   .get('/security/alert',getFirewallLogs)
 
 
