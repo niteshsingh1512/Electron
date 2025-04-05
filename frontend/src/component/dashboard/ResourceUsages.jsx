@@ -5,14 +5,14 @@ const ResourceUsages = ({ cpuUsage, memoryUsage }) => {
   // Generate sample historical data
   const generateData = (currentValue, historicalPoints = 12) => {
     const data = [];
-    let baseValue = currentValue - (Math.random() * 15);
+    let baseValue = currentValue ;
     
     for (let i = 0; i < historicalPoints; i++) {
-      const value = baseValue + (Math.random() * 12 - 6);
-      const clampedValue = Math.min(Math.max(value, 0), 100);
+      const value = currentValue
+      const clampedValue = currentValue
       data.push({
         time: i,
-        value: clampedValue.toFixed(1)
+        value: clampedValue
       });
       baseValue = clampedValue;
     }
@@ -20,7 +20,7 @@ const ResourceUsages = ({ cpuUsage, memoryUsage }) => {
     // Add current value at the end
     data.push({
       time: historicalPoints,
-      value: currentValue.toFixed(1)
+      value: currentValue
     });
     
     return data;
@@ -52,7 +52,7 @@ const ResourceUsages = ({ cpuUsage, memoryUsage }) => {
         <div>
           <div className="flex justify-between items-center mb-1">
             <span className="text-sm font-medium text-gray-700">CPU</span>
-            <span className="text-sm font-bold text-blue-600">{cpuUsage.toFixed(1)}%</span>
+            <span className="text-sm font-bold text-blue-600">{cpuUsage}%</span>
           </div>
           <div className="h-12">
             <ResponsiveContainer width="100%" height="100%">
@@ -75,7 +75,7 @@ const ResourceUsages = ({ cpuUsage, memoryUsage }) => {
         <div>
           <div className="flex justify-between items-center mb-1">
             <span className="text-sm font-medium text-gray-700">Memory</span>
-            <span className="text-sm font-bold text-purple-600">{memoryUsage.toFixed(1)}%</span>
+            <span className="text-sm font-bold text-purple-600">{memoryUsage}%</span>
           </div>
           <div className="h-12">
             <ResponsiveContainer width="100%" height="100%">

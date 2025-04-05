@@ -6,6 +6,7 @@ import SystemHealth from '../component/dashboard/SystemHealth';
 import Header from '../component/layout/Header';
 import Sidebar from '../component/layout/Sidebar';
 import Footer from '../component/layout/Footer';
+import axios from 'axios';
 import { PieChart, ArrowUpCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const Dashboard = () => {
@@ -14,27 +15,55 @@ const Dashboard = () => {
   const [issueCount, setIssueCount] = useState(3);
   const [cpuUsage, setCpuUsage] = useState(42);
   const [memoryUsage, setMemoryUsage] = useState(65);
-
+  
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   // Simulate real-time data updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCpuUsage(prevUsage => {
-        const newValue = prevUsage + (Math.random() * 6 - 3);
-        return Math.min(Math.max(newValue, 20), 95);
-      });
+  // useEffect(() => {
+    
+  //   const interval = setInterval(() => {
+  //     setCpuUsage(prevUsage => {
+  //       const newValue = prevUsage + (Math.random() * 6 - 3);
+  //       return Math.min(Math.max(newValue, 20), 95);
+  //     });
       
-      setMemoryUsage(prevUsage => {
-        const newValue = prevUsage + (Math.random() * 4 - 2);
-        return Math.min(Math.max(newValue, 40), 90);
-      });
-    }, 5000);
+  //     setMemoryUsage(prevUsage => {
+  //       const newValue = prevUsage + (Math.random() * 4 - 2);
+  //       return Math.min(Math.max(newValue, 40), 90);
+  //     });
+  //   }, 5000);
 
+  //   return () => clearInterval(interval);
+  // }, []);
+
+  useEffect(() => {
+    const fetchUsage = async () => {
+      try {
+        const res = await axios.get('http://localhost:3000/monitor/total/cpu');
+        setCpuUsage(res.data.totalUsage);
+
+        const memRes = await axios.get('http://localhost:3000/monitor/total/memory');
+        setMemoryUsage(memRes.data.usagePercent);
+
+        console.log('CPU:', res.data.totalUsage);
+        console.log('Memory:', memRes.data.usagePercent);
+      } catch (error) {
+        console.error('Error fetching usage data:', error);
+      }
+    };
+
+    // Call immediately
+    fetchUsage();
+
+    // Set up interval
+    const interval = setInterval(fetchUsage, 3000); // fetch every 3 seconds
+
+    // Cleanup on unmount
     return () => clearInterval(interval);
   }, []);
+
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -67,7 +96,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">CPU Usage</p>
-                    <p className="text-2xl font-bold text-blue-600">{cpuUsage.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-blue-600">{cpuUsage}</p>
                   </div>
                   <div className="bg-blue-100 p-3 rounded-full">
                     <PieChart className="h-6 w-6 text-blue-600" />
@@ -79,7 +108,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">Memory Usage</p>
-                    <p className="text-2xl font-bold text-purple-600">{memoryUsage.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-purple-600">{memoryUsage}</p>
                   </div>
                   <div className="bg-purple-100 p-3 rounded-full">
                     <ArrowUpCircle className="h-6 w-6 text-purple-600" />
@@ -111,7 +140,7 @@ const Dashboard = () => {
               {/* Right Column */}
               <div className="space-y-6">
                 <QuickActions />
-                <ResourceUsages cpuUsage={cpuUsage} memoryUsage={memoryUsage} />
+                {/* <ResourceUsages cpuUsage={cpuUsage} memoryUsage={memoryUsage} /> */}
               </div>
             </div>
           </div>
