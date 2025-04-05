@@ -6,7 +6,7 @@ import { Activity, Database, HardDrive, Wifi, ChevronRight } from 'lucide-react'
 import Header from '../component/layout/Header';
 import Sidebar from '../component/layout/Sidebar';
 
-const SystemPerformance = () => {
+const DigitalWellbeing = () => {
   const [activeTab, setActiveTab] = useState('cpu');
   const [cpuData, setCpuData] = useState([]);
   const [memoryData, setMemoryData] = useState([]);
@@ -532,7 +532,7 @@ const SystemPerformance = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar isOpen={true} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -540,7 +540,7 @@ const SystemPerformance = () => {
         
         <main className="flex-1 overflow-y-auto p-4">
           <div className="container mx-auto">
-            <h1 className="text-2xl font-bold mb-6">System Performance</h1>
+            <h1 className="text-2xl font-bold mb-6">Digital Wellbeing</h1> {/* Updated title */}
             
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-4">
@@ -565,4 +565,4 @@ const SystemPerformance = () => {
   );
 };
 
-export default SystemPerformance;
+export default DigitalWellbeing;

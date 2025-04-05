@@ -5,8 +5,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Dashboard from './pages/Dashboard';
 import Diagnostics from './pages/Diagnostics';
 import Security from './pages/Security';
-// import Reports from './pages/Reposrts';
-// import Settings from './pages/Settings';
+import SystemPerformance from './pages/SystemPerformance';
+import DigitalWellbeing from './pages/DigitalWellbeing';
+import UpdatesPage from './pages/UpdatesPage';
+import AiHelp from './pages/AiHelp'; // Import the AiHelp component
 
 // Dashboard sub-components for direct access routes
 import QuickActions from './component/dashboard/QuickActions.jsx';
@@ -35,6 +37,10 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/diagnostics" element={<Diagnostics />} />
         <Route path="/security" element={<Security />} />
+        <Route path="/monitoring/system-performance" element={<SystemPerformance />} />
+        <Route path="/digital-wellbeing" element={<DigitalWellbeing />} />
+        <Route path="/monitoring/command-center" element={<UpdatesPage />} /> {/* Route for UpdatesPage */}
+        <Route path="/monitoring/process-monitor" element={<AiHelp />} /> {/* Route for AiHelp */}
         {/* <Route path="/reports" element={<Reports />} /> */}
         {/* <Route path="/settings" element={<Settings />} /> */}
         
