@@ -9,7 +9,7 @@ function createWindow() {
       contextIsolation: true,
     },
   });
-  win.webContents.openDevTools();
+  // win.webContents.openDevTools();
   // Load from localhost in dev, or local file in production
   const startUrl = process.env.VITE_DEV_SERVER_URL ||  'http://localhost:5173'
   win.loadURL(startUrl);
