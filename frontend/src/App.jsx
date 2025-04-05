@@ -6,9 +6,9 @@ import Dashboard from './pages/Dashboard';
 import Diagnostics from './pages/Diagnostics';
 import Security from './pages/Security';
 import SystemPerformance from './pages/SystemPerformance';
-import DigitalWellbeing from './pages/DigitalWellbeing';
+import DigitalWellbeing from './pages/DigitalWellbeing'; // Matches "CPU & Memory" in Sidebar
 import UpdatesPage from './pages/UpdatesPage';
-import AiHelp from './pages/AiHelp'; // Import the AiHelp component
+import AiHelp from './pages/AiHelp';
 
 // Dashboard sub-components for direct access routes
 import QuickActions from './component/dashboard/QuickActions.jsx';
@@ -38,9 +38,9 @@ function App() {
         <Route path="/diagnostics" element={<Diagnostics />} />
         <Route path="/security" element={<Security />} />
         <Route path="/monitoring/system-performance" element={<SystemPerformance />} />
-        <Route path="/digital-wellbeing" element={<DigitalWellbeing />} />
-        <Route path="/monitoring/command-center" element={<UpdatesPage />} /> {/* Route for UpdatesPage */}
-        <Route path="/monitoring/process-monitor" element={<AiHelp />} /> {/* Route for AiHelp */}
+        <Route path="/monitoring/digital-wellbeing" element={<DigitalWellbeing />} /> {/* Matches "CPU & Memory" redirect */}
+        <Route path="/monitoring/command-center" element={<UpdatesPage />} /> {/* Matches "Updates" redirect */}
+        <Route path="/monitoring/process-monitor" element={<AiHelp />} /> {/* Matches "AI Help" redirect */}
         {/* <Route path="/reports" element={<Reports />} /> */}
         {/* <Route path="/settings" element={<Settings />} /> */}
         

@@ -31,10 +31,8 @@ const Sidebar = ({ isOpen }) => {
   // System monitoring items with path information
   const monitoringItems = [
     { name: 'System Performance', icon: <MonitorSmartphone className="h-5 w-5" />, path: '/monitoring/system-performance' },
-    { name: 'CPU & Memory', icon: <Cpu className="h-5 w-5" />, path: '/digital-wellbeing' }, // Redirect to DigitalWellbeing
-    // { name: 'CPU & Memory', icon: <Database className="h-5 w-5" />, path: '/monitoring/database-health' }, // Removed
-    // { name: 'Network Traffic', icon: <Network className="h-5 w-5" />, path: '/monitoring/network-traffic' },
-    { name: 'AI Help', icon: <Activity className="h-5 w-5" />, path: '/monitoring/process-monitor' }, // Redirect to AiHelp
+    { name: 'Digital Wellbeing', icon: <Cpu className="h-5 w-5" />, path: '/monitoring/digital-wellbeing' }, // Redirect to DigitalWellbeing page
+    { name: 'AI Help', icon: <Activity className="h-5 w-5" />, path: '/monitoring/process-monitor' }, // Redirect to AiHelp page
     { name: 'Updates', icon: <Terminal className="h-5 w-5" />, path: '/monitoring/command-center' } // Redirect to UpdatesPage
   ];
 
