@@ -300,6 +300,7 @@ const getTotalCPUConsumption = async (req, res) => {
           await AppUsage.findOneAndUpdate(
             { name: appName },
             { $push: pushOps },
+            
             { upsert: true, new: true }
           );
         }
