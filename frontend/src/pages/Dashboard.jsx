@@ -11,7 +11,7 @@ import { PieChart, ArrowUpCircle, AlertTriangle, CheckCircle } from 'lucide-reac
 
 const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [systemScore, setSystemScore] = useState(85);
+  const [systemScore, setSystemScore] = useState(0);
   const [issueCount, setIssueCount] = useState(3);
   const [cpuUsage, setCpuUsage] = useState(42);
   const [memoryUsage, setMemoryUsage] = useState(65);
@@ -41,14 +41,18 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchUsage = async () => {
       try {
+        const data = localStorage.getItem('system_health');
+        const parsedData = JSON.parse(data);
+
+        setSystemScore(parsedData.score);
         const res = await axios.get('http://localhost:3000/monitor/total/cpu');
         setCpuUsage(res.data.totalUsage);
 
         const memRes = await axios.get('http://localhost:3000/monitor/total/memory');
         setMemoryUsage(memRes.data.usagePercent);
 
-        console.log('CPU:', res.data.totalUsage);
-        console.log('Memory:', memRes.data.usagePercent);
+        // console.log('CPU:', res.data.totalUsage);
+        // console.log('Memory:', memRes.data.usagePercent);
       } catch (error) {
         console.error('Error fetching usage data:', error);
       }
@@ -59,6 +63,8 @@ const Dashboard = () => {
 
     // Set up interval
     const interval = setInterval(fetchUsage, 3000); // fetch every 3 seconds
+
+    //var systemScore = localStorage.getItem('systemealth')["score"];
 
     // Cleanup on unmount
     return () => clearInterval(interval);
@@ -79,18 +85,8 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold mb-6 text-gray-800">System Dashboard</h1>
             
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">System Health</p>
-                    <p className="text-2xl font-bold text-green-600">{systemScore}%</p>
-                  </div>
-                  <div className="bg-green-100 p-3 rounded-full">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              
               
               <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex items-center justify-between">
