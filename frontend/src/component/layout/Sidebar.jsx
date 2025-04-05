@@ -24,18 +24,18 @@ const Sidebar = ({ isOpen }) => {
     { name: 'Dashboard', icon: <Home className="h-5 w-5" />, path: '/dashboard' },
     { name: 'Diagnostics', icon: <AlertCircle className="h-5 w-5" />, path: '/diagnostics' },
     { name: 'Security', icon: <Shield className="h-5 w-5" />, path: '/security' },
-    { name: 'Reports', icon: <BarChart2 className="h-5 w-5" />, path: '/reports' },
+    // { name: 'Reports', icon: <BarChart2 className="h-5 w-5" />, path: '/reports' },
     // { name: 'Settings', icon: <Settings className="h-5 w-5" />, path: '/settings' }
   ];
   
   // System monitoring items with path information
   const monitoringItems = [
     { name: 'System Performance', icon: <MonitorSmartphone className="h-5 w-5" />, path: '/monitoring/system-performance' },
-    { name: 'Database Health', icon: <Database className="h-5 w-5" />, path: '/monitoring/database-health' },
-    { name: 'CPU & Memory', icon: <Cpu className="h-5 w-5" />, path: '/monitoring/cpu-memory' },
+    { name: 'CPU & Memory', icon: <Database className="h-5 w-5" />, path: '/monitoring/database-health' },
+    // { name: 'CPU & Memory', icon: <Cpu className="h-5 w-5" />, path: '/monitoring/cpu-memory' },
     { name: 'Network Traffic', icon: <Network className="h-5 w-5" />, path: '/monitoring/network-traffic' },
-    { name: 'Process Monitor', icon: <Activity className="h-5 w-5" />, path: '/monitoring/process-monitor' },
-    { name: 'Command Center', icon: <Terminal className="h-5 w-5" />, path: '/monitoring/command-center' }
+    { name: 'AI Help', icon: <Activity className="h-5 w-5" />, path: '/monitoring/process-monitor' },
+    { name: 'Updates', icon: <Terminal className="h-5 w-5" />, path: '/monitoring/command-center' }
   ];
 
   return (

@@ -48,7 +48,7 @@ const Header = ({ toggleSidebar }) => {
               <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                 <User className="h-4 w-4" />
               </div>
-              <span className="ml-2 font-medium text-gray-700 hidden md:block">Admin User</span>
+              <span className="ml-2 font-medium text-gray-700 hidden md:block">Nitesh</span>
             </button>
           </div>
         </div>
