@@ -4,21 +4,29 @@ import {
   ShieldCheck, AlertTriangle, XCircle, Wifi,
   ArrowDownToLine, ArrowUpFromLine, Cpu, MemoryStick
 } from 'lucide-react';
-import { Slider } from '@mui/material'; // MUI Slider
+import { Slider } from '@mui/material';
 
 // --- Default Threshold Config ---
 const DEFAULT_THRESHOLDS = {
   cpu: { warning: 70, critical: 90 },
   memory: { warning: 75, critical: 90 },
-  network: { warning: 2, critical: 0.5 },
+  network: { warning: 2, critical: 5 }, // MB/s
 };
 
 // --- Threshold Slider Component ---
 const ThresholdSlider = ({ metric, thresholds, setThresholds }) => {
   const [value, setValue] = useState([
-    thresholds?.[metric]?.warning || 70,
-    thresholds?.[metric]?.critical || 90,
+    thresholds[metric]?.warning || DEFAULT_THRESHOLDS[metric].warning,
+    thresholds[metric]?.critical || DEFAULT_THRESHOLDS[metric].critical,
   ]);
+
+  // Sync slider with threshold changes from other sources
+  useEffect(() => {
+    setValue([
+      thresholds[metric]?.warning || DEFAULT_THRESHOLDS[metric].warning,
+      thresholds[metric]?.critical || DEFAULT_THRESHOLDS[metric].critical,
+    ]);
+  }, [thresholds, metric]);
 
   const handleChange = (e, newValue) => {
     setValue(newValue);
@@ -38,7 +46,9 @@ const ThresholdSlider = ({ metric, thresholds, setThresholds }) => {
 
   return (
     <div className="mb-4">
-      <label className="text-sm font-semibold mb-1 block capitalize">{metric} Thresholds</label>
+      <label className="text-sm font-semibold mb-1 block capitalize">
+        {metric} Thresholds {metric === 'network' ? '(MB/s)' : '(%)'}
+      </label>
       <Slider
         value={value}
         onChange={handleChange}
@@ -48,8 +58,8 @@ const ThresholdSlider = ({ metric, thresholds, setThresholds }) => {
         max={metric === 'network' ? 10 : 100}
         step={metric === 'network' ? 0.1 : 1}
         marks={[
-          { value: value[0], label: 'Warning' },
-          { value: value[1], label: 'Critical' },
+          { value: value[0], label: `W: ${value[0]}${metric === 'network' ? 'MB/s' : '%'}` },
+          { value: value[1], label: `C: ${value[1]}${metric === 'network' ? 'MB/s' : '%'}` },
         ]}
       />
     </div>
@@ -58,38 +68,41 @@ const ThresholdSlider = ({ metric, thresholds, setThresholds }) => {
 
 // --- Health Calculation ---
 const getComponentHealth = (name, value, thresholds) => {
-  const t = thresholds[name.toLowerCase()];
-  if (!t) return { status: 'Healthy', score: 85 };
-
+  const t = thresholds[name.toLowerCase()] || DEFAULT_THRESHOLDS[name.toLowerCase()];
   let status = 'Healthy';
-  let score;
+  let score = 85;
 
-  if (name.toLowerCase() === 'network') {
-    if (value < t.critical) {
-      status = 'Critical';
-      score = 30;
-    } else if (value < t.warning) {
-      status = 'Warning';
-      score = 65;
-    } else {
-      status = 'Healthy';
-      score = 95;
-    }
-  } else {
-    if (value >= t.critical) {
-      status = 'Critical';
-      score = Math.max(0, 100 - value * 1.5);
-    } else if (value >= t.warning) {
-      status = 'Warning';
-      score = Math.max(20, 100 - value);
-    } else {
-      status = 'Healthy';
-      score = Math.max(50, 100 - value * 0.5);
-    }
-    score = Math.round(score);
+  if (typeof value !== 'number' || isNaN(value)) {
+    return { status: 'Critical', score: 10 };
   }
 
-  return { status, score };
+  if (name.toLowerCase() === 'network') {
+    // Network: higher values are worse (MB/s)
+    if (value >= t.critical) {
+      status = 'Critical';
+      score = Math.max(0, 100 - (value - t.critical) * 20);
+    } else if (value >= t.warning) {
+      status = 'Warning';
+      score = Math.max(30, 100 - (value - t.warning) * 10);
+    } else {
+      status = 'Healthy';
+      score = Math.min(100, 90 + (t.warning - value) * 2);
+    }
+  } else {
+    // CPU and Memory: higher values are worse (%)
+    if (value >= t.critical) {
+      status = 'Critical';
+      score = Math.max(0, 100 - (value - t.critical) * 5);
+    } else if (value >= t.warning) {
+      status = 'Warning';
+      score = Math.max(30, 100 - (value - t.warning) * 2);
+    } else {
+      status = 'Healthy';
+      score = Math.min(100, 90 + (t.warning - value));
+    }
+  }
+
+  return { status, score: Math.round(score) };
 };
 
 // --- Detail Card ---
@@ -113,10 +126,12 @@ const SystemHealth = () => {
     interface: "Loading...",
     rx_total: "0 MB",
     tx_total: "0 MB",
-    rx_sec: "0 KB/s",
-    tx_sec: "0 KB/s",
-    rx_rate_kbps: 0
+    rx_sec: "0 MB/s",
+    tx_sec: "0 MB/s",
+    rx_rate_mbps: 0,
+    tx_rate_mbps: 0
   });
+  const [refreshTime, setRefreshTime] = useState(new Date());
 
   const [thresholds, setThresholds] = useState(() => {
     const stored = localStorage.getItem('system_thresholds');
@@ -139,10 +154,6 @@ const SystemHealth = () => {
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
-    let cpuResult = null;
-    let memoryResult = null;
-    let networkResult = null;
-
     try {
       const responses = await Promise.all([
         fetch('http://localhost:3000/monitor/total/cpu'),
@@ -150,51 +161,60 @@ const SystemHealth = () => {
         fetch('http://localhost:3000/monitor/total/network')
       ]);
 
-      if (responses[0] && responses[0].ok) {
-        const data = await responses[0].json();
-        cpuResult = getComponentHealth('CPU', data.currentLoad || 0, thresholds);
-        setCpuLoad(data.currentLoad || 0);
-      } else {
-        cpuResult = { status: 'Critical', score: 10 };
-        setCpuLoad(0);
-      }
+      const [cpuResponse, memoryResponse, networkResponse] = responses;
 
-      if (responses[1] && responses[1].ok) {
-        const data = await responses[1].json();
-        memoryResult = getComponentHealth('Memory', data.usedPercent || 0, thresholds);
-        setMemoryUsage(data.usedPercent || 0);
-      } else {
-        memoryResult = { status: 'Critical', score: 10 };
-        setMemoryUsage(0);
-      }
+      // CPU
+      const cpuData = cpuResponse.ok ? await cpuResponse.json() : null;
+      const cpuValue = cpuData?.currentLoad || 0;
+      const cpuResult = getComponentHealth('CPU', cpuValue, thresholds);
+      setCpuLoad(cpuValue);
 
-      if (responses[2] && responses[2].ok) {
-        const data = await responses[2].json();
-        const rxRate = parseFloat(data.rx_sec) || 0;
-        networkResult = getComponentHealth('Network', rxRate, thresholds);
-        setNetworkData({ ...data, rx_rate_kbps: rxRate });
-      } else {
-        networkResult = { status: 'Critical', score: 10 };
-        setNetworkData(prev => ({ ...prev, interface: "Error", rx_sec: "N/A", tx_sec: "N/A", rx_rate_kbps: 0 }));
-      }
+      // Memory
+      const memoryData = memoryResponse.ok ? await memoryResponse.json() : null;
+      const memoryValue = memoryData?.usedPercent || 0;
+      const memoryResult = getComponentHealth('Memory', memoryValue, thresholds);
+      setMemoryUsage(memoryValue);
 
-      setHealthStatus(prev => {
-        const updatedComponents = prev.components.map(component => {
-          switch (component.name) {
-            case 'CPU': return { ...component, ...cpuResult };
-            case 'Memory': return { ...component, ...memoryResult };
-            case 'Network': return { ...component, ...networkResult };
-            default: return component;
-          }
+      // Network
+      const networkDataRaw = networkResponse.ok ? await networkResponse.json() : null;
+      if (networkDataRaw) {
+        // Convert KB/s to MB/s if necessary
+        const rxRate = parseFloat(networkDataRaw.rx_sec) || 0;
+        const txRate = parseFloat(networkDataRaw.tx_sec) || 0;
+        const rxRateMbps = networkDataRaw.rx_sec.includes('KB') ? rxRate / 1000 : rxRate;
+        const txRateMbps = networkDataRaw.tx_sec.includes('KB') ? txRate / 1000 : txRate;
+        
+        const networkResult = getComponentHealth('Network', Math.max(rxRateMbps, txRateMbps), thresholds);
+        
+        setNetworkData({
+          interface: networkDataRaw.interface || "eth0",
+          rx_total: networkDataRaw.rx_total || "0 MB",
+          tx_total: networkDataRaw.tx_total || "0 MB",
+          rx_sec: `${rxRateMbps.toFixed(2)} MB/s`,
+          tx_sec: `${txRateMbps.toFixed(2)} MB/s`,
+          rx_rate_mbps: rxRateMbps,
+          tx_rate_mbps: txRateMbps
         });
 
-        const newOverallScore = Math.round(
-          updatedComponents.reduce((sum, c) => sum + c.score, 0) / updatedComponents.length
-        );
+        setHealthStatus(prev => {
+          const updatedComponents = prev.components.map(component => {
+            switch (component.name) {
+              case 'CPU': return { ...component, ...cpuResult };
+              case 'Memory': return { ...component, ...memoryResult };
+              case 'Network': return { ...component, ...networkResult };
+              default: return component;
+            }
+          });
 
-        return { score: newOverallScore, components: updatedComponents };
-      });
+          const newOverallScore = Math.round(
+            updatedComponents.reduce((sum, c) => sum + c.score, 0) / updatedComponents.length
+          );
 
+          return { score: newOverallScore, components: updatedComponents };
+        });
+      } else {
+        throw new Error('Network data fetch failed');
+      }
     } catch (err) {
       console.error("Fetch error:", err);
       setHealthStatus(prev => ({
@@ -202,8 +222,18 @@ const SystemHealth = () => {
         score: 10,
         components: prev.components.map(c => ({ ...c, status: 'Critical', score: 10 }))
       }));
+      setNetworkData({
+        interface: "Error",
+        rx_total: "N/A",
+        tx_total: "N/A",
+        rx_sec: "N/A",
+        tx_sec: "N/A",
+        rx_rate_mbps: 0,
+        tx_rate_mbps: 0
+      });
     } finally {
       setIsLoading(false);
+      setRefreshTime(new Date());
     }
   }, [thresholds]);
 
@@ -240,9 +270,12 @@ const SystemHealth = () => {
     score >= 80 ? 'text-green-600' : score >= 60 ? 'text-amber-600' : 'text-red-600';
 
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="px-4 py-3 border-b border-gray-200">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
         <h2 className="font-medium text-gray-800">System Health</h2>
+        <span className="text-xs text-gray-500">
+          Last updated: {refreshTime.toLocaleTimeString()}
+        </span>
       </div>
 
       <div className="p-4">
@@ -314,6 +347,7 @@ const SystemHealth = () => {
                           {component.status}
                           {component.name === 'CPU' && ` (${cpuLoad.toFixed(1)}%)`}
                           {component.name === 'Memory' && ` (${memoryUsage.toFixed(1)}%)`}
+                          {component.name === 'Network' && ` (${Math.max(networkData.rx_rate_mbps, networkData.tx_rate_mbps).toFixed(2)} MB/s)`}
                         </span>
                       </div>
 

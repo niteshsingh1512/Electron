@@ -1,55 +1,52 @@
 import React, { useState } from 'react';
-import { Menu, Bell, Search, User, Settings, MessageSquare } from 'lucide-react';
+import { Menu, User } from 'lucide-react';
 
 const Header = ({ toggleSidebar }) => {
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  
+  const userInfo = {
+    name: "Nitesh",
+    email: "nitesh@example.com"
+  };
   
   return (
-    <header className="bg-white shadow-sm z-10">
+    <header className="bg-white shadow-sm z-20 border-b border-gray-200">
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center">
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
+            className="p-2 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none"
+            aria-label="Toggle sidebar"
           >
             <Menu className="h-6 w-6" />
           </button>
           
-          <div className={`relative mx-4 ${searchFocused ? 'flex-grow md:max-w-lg' : 'w-48 md:w-64'}`}>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full py-2 pl-10 pr-4 rounded-md bg-gray-100 border-transparent focus:border-blue-500 focus:bg-white focus:ring-0 text-sm"
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-              />
-            </div>
+          <div className="ml-4">
+            <h1 className="text-lg font-semibold text-gray-800">DiagnosticAI</h1>
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <button className="p-1 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none">
-            <MessageSquare className="h-5 w-5" />
-          </button>
-          
-          <button className="p-1 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-          </button>
-          
-          <button className="p-1 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none">
-            <Settings className="h-5 w-5" />
-          </button>
-          
-          <div className="border-l pl-4 border-gray-200">
-            <button className="flex items-center text-sm focus:outline-none">
+        <div className="flex items-center">
+          <div className="relative">
+            <button 
+              className="flex items-center text-sm focus:outline-none hover:bg-gray-100 p-2 rounded-lg"
+              onClick={() => setShowUserProfile(!showUserProfile)}
+            >
               <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
                 <User className="h-4 w-4" />
               </div>
-              <span className="ml-2 font-medium text-gray-700 hidden md:block">Nitesh</span>
+              <span className="ml-2 font-medium text-gray-700 hidden md:block">{userInfo.name}</span>
             </button>
+            
+            {/* User Profile Dropdown - Simplified */}
+            {showUserProfile && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-3 z-50 border border-gray-200">
+                <div className="px-4">
+                  <p className="text-sm font-medium text-gray-900">{userInfo.name}</p>
+                  <p className="text-sm font-normal text-gray-500 truncate">{userInfo.email}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

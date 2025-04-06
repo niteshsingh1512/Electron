@@ -30,15 +30,7 @@ const RecentIssues = () => {
       time: '3 hours ago',
       icon: <Wifi className="h-5 w-5 text-blue-500" />
     },
-    {
-      id: 4,
-      title: 'Disk Space Warning',
-      description: 'System drive (C:) has less than 10% free space remaining',
-      type: 'Storage',
-      severity: 'Medium',
-      time: '1 day ago',
-      icon: <FileWarning className="h-5 w-5 text-amber-500" />
-    }
+   
   ];
 
   const getSeverityBadge = (severity) => {
