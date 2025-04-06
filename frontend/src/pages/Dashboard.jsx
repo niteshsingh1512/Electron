@@ -13,7 +13,7 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [systemScore, setSystemScore] = useState(85);
   const [issueCount, setIssueCount] = useState(3);
-  const [cpuUsage, setCpuUsage] = useState(42);
+  const [cpuUsage, setCpuUsage] = useState(0);
   const [memoryUsage, setMemoryUsage] = useState(65);
   
   const toggleSidebar = () => {
@@ -79,18 +79,8 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold mb-6 text-gray-800">System Dashboard</h1>
             
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">System Health</p>
-                    <p className="text-2xl font-bold text-green-600">{systemScore}%</p>
-                  </div>
-                  <div className="bg-green-100 p-3 rounded-full">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              
               
               <div className="bg-white rounded-lg shadow p-4">
                 <div className="flex items-center justify-between">

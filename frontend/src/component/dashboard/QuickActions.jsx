@@ -3,6 +3,8 @@ import {
   Shield, Zap, Trash2, Database, Wifi, 
   Download, RotateCw, CheckCircle, Clock, Save
 } from 'lucide-react';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const QuickActions = () => {
   const [actionInProgress, setActionInProgress] = useState(null);
@@ -10,7 +12,18 @@ const QuickActions = () => {
   const [showProgress, setShowProgress] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const simulateAction = (actionId) => {
+  const simulateAction =async (actionId) => {
+    if(actionId===4){
+      const res=await axios.get('http://localhost:3000/monitor/kill/processes');
+      
+      
+      Swal.fire({
+        title: "Done!",
+        text: "Terminated Idle Apps",
+        icon: "success"
+      });
+      return;
+    }
     if (actionInProgress) return;
     
     setActionInProgress(actionId);
@@ -19,7 +32,7 @@ const QuickActions = () => {
     
     const interval = setInterval(() => {
       setProgress(prev => {
-        const newProgress = prev + Math.floor(Math.random() * 15) + 5;
+        const newProgress = prev + Math.floor(Math.random() * 2) ;
         if (newProgress >= 100) {
           clearInterval(interval);
           setTimeout(() => {
@@ -38,7 +51,7 @@ const QuickActions = () => {
     { id: 1, name: 'Quick System Scan', icon: <Shield />, color: 'blue' },
     { id: 2, name: 'Optimize Performance', icon: <Zap />, color: 'amber' },
     { id: 3, name: 'Clear Temp Files', icon: <Trash2 />, color: 'green' },
-    { id: 4, name: 'Database Repair', icon: <Database />, color: 'red' },
+    { id: 4, name: 'Terminate Idle Apps', icon: <Database />, color: 'red' },
     { id: 5, name: 'Network Diagnostics', icon: <Wifi />, color: 'purple' },
     { id: 6, name: 'Update Drivers', icon: <Download />, color: 'teal' },
     { id: 7, name: 'Check for Updates', icon: <RotateCw />, color: 'indigo' },
@@ -103,6 +116,7 @@ const QuickActions = () => {
             </span>
           </button>
         ))}
+        
       </div>
     </div>
   );

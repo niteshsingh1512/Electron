@@ -27,9 +27,6 @@ const SystemPerformance = () => {
       l1Cache: '928 KB',
       l2Cache: '6.5 MB',
       l3Cache: '12.0 MB',
-      processes: 341,
-      threads: 4920,
-      handles: 155761,
       uptime: '07:35:19'
     },
     memory: {
@@ -192,20 +189,7 @@ const SystemPerformance = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-sm font-medium">Processes</div>
-                <div className="text-xl">{systemInfo.cpu.processes}</div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Threads</div>
-                <div className="text-xl">{systemInfo.cpu.threads}</div>
-              </div>
-              <div>
-                <div className="text-sm font-medium">Handles</div>
-                <div className="text-xl">{systemInfo.cpu.handles}</div>
-              </div>
-            </div>
+            
             
             <div>
               <div className="text-sm font-medium">Up time</div>

@@ -1,55 +1,14 @@
-import os
-import shutil
-import tempfile
 from flask import Flask, jsonify
-from flask_cors import CORS  # Import CORS
 import subprocess
 import json
 import psutil
 import datetime
 from collections import defaultdict
+from plyer import notification
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
 
-# Alternatively, you can enable CORS for specific routes:
-# CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-@app.route('/clear_temp_files', methods=['POST'])
-def clear_temp_files():
-    temp_dirs = [
-        os.environ.get('TEMP'),
-        os.environ.get('TMP'),
-        r'C:\Windows\Temp'
-    ]
-
-    deleted_files = []
-    failed_files = []
-
-    for temp_dir in temp_dirs:
-        if temp_dir and os.path.exists(temp_dir):
-            for root, dirs, files in os.walk(temp_dir):
-                for name in files:
-                    file_path = os.path.join(root, name)
-                    try:
-                        os.remove(file_path)
-                        deleted_files.append(file_path)
-                    except Exception as e:
-                        failed_files.append({"file": file_path, "error": str(e)})
-                for name in dirs:
-                    dir_path = os.path.join(root, name)
-                    try:
-                        shutil.rmtree(dir_path, ignore_errors=True)
-                        deleted_files.append(dir_path)
-                    except Exception as e:
-                        failed_files.append({"dir": dir_path, "error": str(e)})
-
-    return jsonify({
-        "deleted": len(deleted_files),
-        "failed": failed_files[:10],  # return only first 10 failed for brevity
-        "message": "Temp file cleanup complete."
-    })
-
+# === Existing Routes ===
 @app.route('/check_driver_updates', methods=['GET'])
 def check_driver_updates():
     ps_command = r'''
@@ -67,7 +26,6 @@ def check_driver_updates():
     }
     $Updates | ConvertTo-Json
     '''
-
     try:
         result = subprocess.run(["powershell", "-Command", ps_command], capture_output=True, text=True, timeout=60)
         if result.returncode != 0:
@@ -109,6 +67,7 @@ def app_usage():
 
     return jsonify({"app_usage": result})
 
+
 @app.route('/network-usage', methods=['GET'])
 def network_usage():
     usage = defaultdict(lambda: {'bytes_sent': 0, 'bytes_recv': 0})
@@ -146,6 +105,7 @@ def network_usage():
     result = sorted(result, key=lambda x: x["download_MB"] + x["upload_MB"], reverse=True)
     return jsonify({"network_usage": result})
 
+
 @app.route('/system-scan', methods=['GET'])
 def system_scan():
     ps_script = r'''
@@ -178,6 +138,54 @@ def system_scan():
         return jsonify({"error": "Scan timed out."}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# === NEW ROUTE: Chrome Tabs Detection ===
+@app.route('/chrome-tabs', methods=['GET'])
+def chrome_tabs():
+    memory_threshold_mb = 800   # Total memory usage threshold
+    cpu_threshold_percent = 50  # Total CPU usage threshold
+
+    total_memory = 0  # in bytes
+    total_cpu = 0.0   # as a percentage
+    processes = []
+
+    for proc in psutil.process_iter(['name', 'memory_info', 'cpu_percent']):
+        try:
+            if proc.info['name'] and 'chrome' in proc.info['name'].lower():
+                # Accumulate memory usage
+                mem = proc.info['memory_info'].rss if proc.info['memory_info'] else 0
+                cpu = proc.cpu_percent(interval=0.1)  # More accurate with short interval
+
+                total_memory += mem
+                total_cpu += cpu
+                processes.append(proc.pid)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
+    total_memory_mb = round(total_memory / (1024 * 1024), 2)
+    total_cpu = round(total_cpu, 2)
+
+    alert_sent = False
+    message = None
+
+    if total_memory_mb > memory_threshold_mb or total_cpu > cpu_threshold_percent:
+        alert_sent = True
+        message = f"Chrome is using {total_memory_mb} MB RAM and {total_cpu}% CPU!"
+        notification.notify(
+            title="⚠️ High Chrome Resource Usage",
+            message=message,
+            timeout=10
+        )
+
+    return jsonify({
+        "chrome_memory_MB": total_memory_mb,
+        "chrome_cpu_percent": total_cpu,
+        "alert_sent": alert_sent,
+        "pids_checked": processes,
+        "message": message if alert_sent else "Within normal limits"
+    })
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

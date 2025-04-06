@@ -244,7 +244,7 @@ const Diagnostics = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar isOpen={true}/>
       
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}

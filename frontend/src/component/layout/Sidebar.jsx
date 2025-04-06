@@ -14,14 +14,14 @@ import {
 const Sidebar = ({ isOpen }) => {
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   // Navigation items with path information
   const navItems = [
     { name: 'Dashboard', icon: <Home className="h-5 w-5" />, path: '/dashboard' },
     { name: 'Diagnostics', icon: <AlertCircle className="h-5 w-5" />, path: '/diagnostics' },
     { name: 'Security', icon: <Shield className="h-5 w-5" />, path: '/security' },
   ];
-  
+
   // System monitoring items with path information
   const monitoringItems = [
     { name: 'System Performance', icon: <MonitorSmartphone className="h-5 w-5" />, path: '/monitoring/system-performance' },
@@ -43,10 +43,10 @@ const Sidebar = ({ isOpen }) => {
           <div className="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center">
             <AlertCircle className="h-5 w-5 text-white" />
           </div>
-          {isOpen && <span className="ml-2 text-xl font-semibold text-gray-800">DiagnosticAI</span>}
+          {isOpen && <span className="ml-2 text-xl font-semibold text-gray-800">Electron</span>}
         </Link>
       </div>
-      
+
       {/* Main Navigation */}
       <nav className="flex-1 overflow-y-auto py-4">
         <div className="px-4 pb-2">
@@ -57,11 +57,10 @@ const Sidebar = ({ isOpen }) => {
             <li key={index}>
               <Link
                 to={item.path}
-                className={`flex items-center px-4 py-3 text-sm ${
-                  isPathActive(item.path, currentPath) 
-                    ? 'bg-blue-50 text-blue-600 font-medium' 
+                className={`flex items-center px-4 py-3 text-sm ${isPathActive(item.path, currentPath)
+                    ? 'bg-blue-50 text-blue-600 font-medium'
                     : 'text-gray-700 hover:bg-gray-100'
-                } rounded-lg mx-2`}
+                  } rounded-lg mx-2`}
               >
                 <div className={`flex-shrink-0 ${isPathActive(item.path, currentPath) ? 'text-blue-500' : 'text-gray-500'}`}>
                   {item.icon}
@@ -71,7 +70,7 @@ const Sidebar = ({ isOpen }) => {
             </li>
           ))}
         </ul>
-        
+
         {isOpen && (
           <>
             <div className="px-4 pt-6 pb-2">
@@ -82,11 +81,10 @@ const Sidebar = ({ isOpen }) => {
                 <li key={index}>
                   <Link
                     to={item.path}
-                    className={`flex items-center px-4 py-3 text-sm ${
-                      isPathActive(item.path, currentPath) 
-                        ? 'bg-blue-50 text-blue-600 font-medium' 
+                    className={`flex items-center px-4 py-3 text-sm ${isPathActive(item.path, currentPath)
+                        ? 'bg-blue-50 text-blue-600 font-medium'
                         : 'text-gray-700 hover:bg-gray-100'
-                    } rounded-lg mx-2`}
+                      } rounded-lg mx-2`}
                   >
                     <div className={`flex-shrink-0 ${isPathActive(item.path, currentPath) ? 'text-blue-500' : 'text-gray-500'}`}>
                       {item.icon}
@@ -99,7 +97,7 @@ const Sidebar = ({ isOpen }) => {
           </>
         )}
       </nav>
-      
+
       {/* Help and Support */}
       {isOpen && (
         <div className="p-4 border-t border-gray-200">

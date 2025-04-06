@@ -27,7 +27,7 @@ const DiagnosticTool = () => {
           generateMockResults();
           return 100;
         }
-        return prev + 5;
+        return prev + 1;
       });
     }, 200);
   };

@@ -121,7 +121,7 @@ const DetailCard = ({ icon: Icon, color, label, value }) => (
 // --- Main Component ---
 const SystemHealth = () => {
   const [cpuLoad, setCpuLoad] = useState(0);
-  const [memoryUsage, setMemoryUsage] = useState(0);
+  //const [memoryUsage, setMemoryUsage] = useState(0);
   const [networkData, setNetworkData] = useState({
     interface: "Loading...",
     rx_total: "0 MB",
@@ -151,6 +151,34 @@ const SystemHealth = () => {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [cpuUsage, setCpuUsage] = useState(0);
+  const [memoryUsage, setMemoryUsage] = useState(65);
+    
+  useEffect(() => {
+    const fetchUsage = async () => {
+      try {
+        const res = await axios.get('http://localhost:3000/monitor/total/cpu');
+        setCpuUsage(res.data.totalUsage);
+
+        const memRes = await axios.get('http://localhost:3000/monitor/total/memory');
+        setMemoryUsage(memRes.data.usagePercent);
+
+        console.log('CPU:', res.data.totalUsage);
+        console.log('Memory:', memRes.data.usagePercent);
+      } catch (error) {
+        console.error('Error fetching usage data:', error);
+      }
+    };
+
+    // Call immediately
+    fetchUsage();
+
+    // Set up interval
+    const interval = setInterval(fetchUsage, 3000); // fetch every 3 seconds
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -165,13 +193,15 @@ const SystemHealth = () => {
 
       // CPU
       const cpuData = cpuResponse.ok ? await cpuResponse.json() : null;
-      const cpuValue = cpuData?.currentLoad || 0;
+      console.log("CPU Data:", cpuData);
+      const cpuValue = cpuData?.totalUsage || 0;
       const cpuResult = getComponentHealth('CPU', cpuValue, thresholds);
       setCpuLoad(cpuValue);
 
       // Memory
       const memoryData = memoryResponse.ok ? await memoryResponse.json() : null;
-      const memoryValue = memoryData?.usedPercent || 0;
+      console.log(memoryData)
+      const memoryValue = memoryData?.usagePercent || 0;
       const memoryResult = getComponentHealth('Memory', memoryValue, thresholds);
       setMemoryUsage(memoryValue);
 
@@ -345,8 +375,8 @@ const SystemHealth = () => {
                         </div>
                         <span className={`text-xs font-medium ${getStatusColor(component.status)}`}>
                           {component.status}
-                          {component.name === 'CPU' && ` (${cpuLoad.toFixed(1)}%)`}
-                          {component.name === 'Memory' && ` (${memoryUsage.toFixed(1)}%)`}
+                          {component.name === 'CPU' && ` (${cpuUsage})`}
+                          {component.name === 'Memory' && ` (${memoryUsage})`}
                           {component.name === 'Network' && ` (${Math.max(networkData.rx_rate_mbps, networkData.tx_rate_mbps).toFixed(2)} MB/s)`}
                         </span>
                       </div>
