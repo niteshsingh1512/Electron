@@ -14,6 +14,7 @@ import {
   Network,
   Terminal
 } from 'lucide-react';
+import axios from 'axios';
 
 const Sidebar = ({ isOpen }) => {
   const location = useLocation();
@@ -36,6 +37,16 @@ const Sidebar = ({ isOpen }) => {
     { name: 'Updates', icon: <Terminal className="h-5 w-5" />, path: '/monitoring/command-center' } // Redirect to UpdatesPage
   ];
 
+  const killButton=async ()=>{
+    try {
+      const res = await axios.get('http://localhost:3000/monitor/kill/processes');
+      alert(res.data.message);
+    } catch (error) {
+      console.error('Error killing processes:', error);
+      alert('Failed to kill processes');
+    }
+  }
+
   return (
     <aside className={`bg-gray-800 text-white transition-all duration-300 ease-in-out ${isOpen ? 'w-64' : 'w-20'} flex flex-col`}>
       {/* Logo */}
@@ -53,6 +64,7 @@ const Sidebar = ({ isOpen }) => {
         <div className="px-4 pb-2">
           {isOpen && <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Main Navigation</h2>}
         </div>
+        <button onClick={killButton} className='w-20 h-10 bg-white text-black rounded-md'>Clear</button>
         <ul className="space-y-1">
           {navItems.map((item, index) => (
             <li key={index}>

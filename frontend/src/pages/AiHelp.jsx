@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Paperclip, Mic, Camera, Send, FileUp, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Paperclip, Mic, Camera, Send, FileUp, AlertCircle, Globe, VolumeX, Volume2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown'; // Import react-markdown
 import remarkGfm from 'remark-gfm'; // Import remark-gfm for GitHub-flavored Markdown
 
@@ -19,6 +19,38 @@ const AiHelp = () => {
   const [numPredict, setNumPredict] = useState(500); // Increased default token count
   const messageEndRef = useRef(null);
   const textareaRef = useRef(null);
+  
+  // Speech recognition related states
+  const [isListening, setIsListening] = useState(false);
+  const [recognitionSupported, setRecognitionSupported] = useState(false);
+  const recognitionRef = useRef(null);
+  
+  // Text-to-speech related states
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechSynthSupported, setSpeechSynthSupported] = useState(false);
+  const synthRef = useRef(null);
+  
+  // Language selection
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState({
+    code: 'en-IN',
+    name: 'English (India)',
+    voiceName: 'Google हिन्दी'
+  });
+  
+  // List of Indian languages supported
+  const indianLanguages = [
+    { code: 'en-IN', name: 'English (India)', voiceName: 'Google English (India)' },
+    { code: 'hi-IN', name: 'Hindi', voiceName: 'Google हिन्दी' },
+    { code: 'ta-IN', name: 'Tamil', voiceName: 'Google தமிழ்' },
+    { code: 'te-IN', name: 'Telugu', voiceName: 'Google తెలుగు' },
+    { code: 'kn-IN', name: 'Kannada', voiceName: 'Google ಕನ್ನಡ' },
+    { code: 'ml-IN', name: 'Malayalam', voiceName: 'Google മലയാളം' },
+    { code: 'mr-IN', name: 'Marathi', voiceName: 'Google मराठी' },
+    { code: 'bn-IN', name: 'Bengali', voiceName: 'Google বাংলা' },
+    { code: 'gu-IN', name: 'Gujarati', voiceName: 'Google ગુજરાતી' },
+    { code: 'pa-IN', name: 'Punjabi', voiceName: 'Google ਪੰਜਾਬੀ' },
+  ];
 
   // Initial questions/problems
   const initialProblems = [
@@ -27,6 +59,50 @@ const AiHelp = () => {
     "I'm getting a blue screen error. How can I troubleshoot it?",
     "My printer isn't connecting to my computer. What should I do?"
   ];
+
+  // Check for speech recognition and speech synthesis support
+  useEffect(() => {
+    // Check for SpeechRecognition support
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setRecognitionSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+      
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+        
+        if (event.results[0].isFinal) {
+          setInput(transcript);
+        }
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+      };
+      
+      recognitionRef.current = recognition;
+    }
+    
+    // Check for SpeechSynthesis support
+    if ('speechSynthesis' in window) {
+      setSpeechSynthSupported(true);
+      synthRef.current = window.speechSynthesis;
+    }
+  }, []);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -50,6 +126,86 @@ const AiHelp = () => {
     }
   };
 
+  // Handle toggle for speech recognition
+  const toggleSpeechRecognition = () => {
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else if (recognitionSupported) {
+      recognitionRef.current.lang = selectedLanguage.code;
+      recognitionRef.current.start();
+    }
+  };
+
+  // Helper function to clean text for speech
+  const cleanTextForSpeech = (text) => {
+    // Remove markdown formatting
+    let cleanedText = text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Bold
+      .replace(/\*(.*?)\*/g, '$1') // Italic
+      .replace(/\[(.*?)\]\((.*?)\)/g, '$1') // Links
+      .replace(/`(.*?)`/g, '$1') // Inline code
+      .replace(/```[\s\S]*?```/g, '') // Code blocks
+      .replace(/#{1,6}\s(.*?)(\n|$)/g, '$1. ') // Headers
+      .replace(/\n\s*[-*+]\s/g, '. ') // Bullet points
+      .replace(/\n\s*\d+\.\s/g, '. ') // Numbered lists
+      
+      // Remove special characters but keep spaces and punctuation
+      .replace(/[^\w\s.,?!;:'"()]/g, ' ')
+      
+      // Replace multiple spaces with a single space
+      .replace(/\s+/g, ' ')
+      
+      // Add pauses for punctuation
+      .replace(/\./g, '. ')
+      .replace(/\!/g, '! ')
+      .replace(/\?/g, '? ')
+      .trim();
+      
+    return cleanedText;
+  };
+
+  // Speak text using speech synthesis
+  const speakText = (text) => {
+    if (speechSynthSupported && text) {
+      // Stop any current speech
+      if (synthRef.current.speaking) {
+        synthRef.current.cancel();
+      }
+      
+      // Clean the text for better speech
+      const cleanedText = cleanTextForSpeech(text);
+      
+      // Create a new utterance
+      const utterance = new SpeechSynthesisUtterance(cleanedText);
+      utterance.lang = selectedLanguage.code;
+      
+      // Try to find a voice matching the selected language
+      const voices = synthRef.current.getVoices();
+      const voice = voices.find(v => 
+        v.lang.includes(selectedLanguage.code.split('-')[0]) || 
+        v.name.includes(selectedLanguage.voiceName)
+      );
+      
+      if (voice) {
+        utterance.voice = voice;
+      }
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      
+      synthRef.current.speak(utterance);
+    }
+  };
+
+  // Stop speaking
+  const stopSpeaking = () => {
+    if (speechSynthSupported && synthRef.current.speaking) {
+      synthRef.current.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
   // Check if response appears truncated
   const isTruncatedResponse = (response) => {
     const truncationIndicators = [
@@ -65,11 +221,16 @@ const AiHelp = () => {
   const generateResponse = async (userInput, isFollowUp = false) => {
     try {
       if (advancedMode) {
-        // Use Gemini API
+        // Use Gemini API with language instruction
         const genAI = new GoogleGenerativeAI("AIzaSyAFxeDll-_VENmpKupAWieN-7dHt4-QfkU");
         const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        
+        // Specify the language in the prompt
+        const languageInstruction = selectedLanguage.code !== 'en-IN' 
+          ? `Please respond in ${selectedLanguage.name} language. Question: ${userInput}`
+          : userInput;
 
-        const result = await model.generateContent(userInput);
+        const result = await model.generateContent(languageInstruction);
         const responseText = result.response.text();
 
         return responseText;
@@ -124,11 +285,23 @@ const AiHelp = () => {
         aiResponse = `${aiResponse} ${continuationResponse.trim()}`;
       }
 
-      setMessages(prevMessages => [...prevMessages, { sender: 'ai', content: aiResponse }]);
+      const messageWithLang = { 
+        sender: 'ai', 
+        content: aiResponse,
+        language: selectedLanguage.code 
+      };
+      
+      setMessages(prevMessages => [...prevMessages, messageWithLang]);
+      
+      // Auto speak the response if in advanced mode
+      if (advancedMode && speechSynthSupported) {
+        speakText(aiResponse);
+      }
     } catch (error) {
       setMessages(prevMessages => [...prevMessages, { 
         sender: 'ai', 
-        content: 'Sorry, there was an error processing your request. Please try again.' 
+        content: 'Sorry, there was an error processing your request. Please try again.',
+        language: selectedLanguage.code
       }]);
     } finally {
       setIsLoading(false);
@@ -163,11 +336,24 @@ const AiHelp = () => {
         aiResponse = `${aiResponse} ${continuationResponse.trim()}`;
       }
 
-      setMessages(prevMessages => [...prevMessages, { sender: 'ai', content: aiResponse }]);
+      setMessages(prevMessages => [...prevMessages, { 
+        sender: 'ai', 
+        content: aiResponse,
+        language: selectedLanguage.code 
+      }]);
+      
+      // Auto speak the response if in advanced mode
+      if (advancedMode && speechSynthSupported) {
+        speakText(aiResponse);
+      }
     } catch (error) {
       setMessages(prevMessages => [
         ...prevMessages, 
-        { sender: 'ai', content: 'Sorry, there was an error processing your request. Please try again.' }
+        { 
+          sender: 'ai', 
+          content: 'Sorry, there was an error processing your request. Please try again.',
+          language: selectedLanguage.code
+        }
       ]);
     } finally {
       setIsLoading(false);
@@ -181,6 +367,17 @@ const AiHelp = () => {
     setShowInitialOptions(true);
     setIsLoading(false);
     setLoadingMessage('');
+    // Stop any ongoing speech
+    if (speechSynthSupported && synthRef.current.speaking) {
+      synthRef.current.cancel();
+      setIsSpeaking(false);
+    }
+  };
+  
+  // Handle language change
+  const handleLanguageChange = (language) => {
+    setSelectedLanguage(language);
+    setShowLanguageSelector(false);
   };
 
   // Format user messages with plain text and AI messages with Markdown
@@ -220,6 +417,32 @@ const AiHelp = () => {
             AiHelp
           </h1>
           <div className="flex items-center space-x-2">
+            <div className="relative">
+              <button 
+                onClick={() => setShowLanguageSelector(!showLanguageSelector)}
+                className="flex items-center justify-center p-2 rounded-md hover:bg-gray-100 text-gray-600"
+              >
+                <Globe size={16} />
+                <span className="ml-1 text-xs md:text-sm">{selectedLanguage.name}</span>
+              </button>
+              
+              {showLanguageSelector && (
+                <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-50 py-1 border border-gray-200">
+                  {indianLanguages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => handleLanguageChange(lang)}
+                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                        selectedLanguage.code === lang.code ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700'
+                      }`}
+                    >
+                      {lang.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <span className="text-sm text-gray-600">Advanced Mode</span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input 
@@ -247,6 +470,27 @@ const AiHelp = () => {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <span>Processing request...</span>
+          </div>
+        )}
+
+        {isListening && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center p-3 bg-red-500 text-white rounded-lg shadow-md animate-pulse">
+            <Mic size={16} className="mr-2" />
+            <span>Listening... Speak now</span>
+          </div>
+        )}
+
+        {isSpeaking && (
+          <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 flex items-center p-3 bg-indigo-600 text-white rounded-lg shadow-md">
+            <Volume2 size={16} className="mr-2 animate-pulse" />
+            <span className="mr-2">Speaking...</span>
+            <button 
+              onClick={stopSpeaking}
+              className="flex items-center justify-center p-1 bg-white text-indigo-600 rounded-md hover:bg-gray-100"
+            >
+              <VolumeX size={14} className="mr-1" />
+              <span className="text-xs font-medium">Stop</span>
+            </button>
           </div>
         )}
 
@@ -358,9 +602,32 @@ const AiHelp = () => {
                         message.sender === 'user' 
                           ? 'bg-indigo-600 text-white' 
                           : 'bg-white border border-gray-200 text-gray-800'
-                      } animate-fadeIn`}
+                      } animate-fadeIn relative`}
                     >
                       {formatMessage(message)}
+                      
+                      {/* Text-to-speech controls for AI messages only */}
+                      {message.sender === 'ai' && speechSynthSupported && advancedMode && (
+                        <div className="absolute top-2 right-2 flex space-x-1">
+                          {isSpeaking && message === messages[messages.length - 1] ? (
+                            <button 
+                              onClick={stopSpeaking}
+                              className="p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200 flex items-center"
+                              title="Stop speaking"
+                            >
+                              <VolumeX size={16} />
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => speakText(message.content)}
+                              className="p-1 bg-indigo-100 text-indigo-600 rounded-full hover:bg-indigo-200 flex items-center"
+                              title="Read aloud"
+                            >
+                              <Volume2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -398,131 +665,53 @@ const AiHelp = () => {
           )}
         </main>
 
+   
         <div className="border-t border-gray-200 p-4 bg-white">
-          <div className="flex items-end max-w-3xl mx-auto bg-white border border-gray-200 rounded-lg">
+          <div className="flex items-end max-w-3xl mx-auto bg-white border border-gray-200 rounded-lg p-2">
             <textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type your tech question here..."
-              className="flex-1 px-4 py-2 resize-none max-h-32 min-h-[44px] focus:outline-none rounded-lg"
+              placeholder={`Type your question in ${selectedLanguage.name}...`}
+              className="flex-grow p-2 focus:outline-none resize-none min-h-[40px] max-h-[160px]"
               rows={1}
               disabled={isLoading}
-            />
-            <div className="flex items-center p-2 space-x-1">
-              <button 
-                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500"
-                disabled={isLoading}
-              >
-                <Paperclip size={20} />
-              </button>
-              {advancedMode && (
-                <>
-                  <button 
-                    className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500"
-                    disabled={isLoading}
-                  >
-                    <Mic size={20} />
-                  </button>
-                  <button 
-                    className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500"
-                    disabled={isLoading}
-                  >
-                    <Camera size={20} />
-                  </button>
-                  <button 
-                    className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500"
-                    disabled={isLoading}
-                  >
-                    <FileUp size={20} />
-                  </button>
-                </>
+            ></textarea>
+            <div className="flex items-center space-x-2 ml-2">
+              {recognitionSupported && (
+                <button
+                  onClick={toggleSpeechRecognition}
+                  className={`p-2 rounded-full ${
+                    isListening ? 'bg-red-100 text-red-600' : 'hover:bg-gray-100 text-gray-500'
+                  }`}
+                  disabled={isLoading}
+                  title="Voice input"
+                >
+                  <Mic size={20} />
+                </button>
               )}
-              <button 
+              <button
                 onClick={handleSendMessage}
-                disabled={isLoading || !input.trim()}
                 className={`p-2 rounded-full ${
-                  isLoading || !input.trim() 
-                    ? 'bg-indigo-300 cursor-not-allowed' 
-                    : 'bg-indigo-600 hover:bg-indigo-700'
-                } text-white flex items-center justify-center`}
+                  input.trim() && !isLoading 
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+                disabled={!input.trim() || isLoading}
               >
-                {isLoading ? (
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                ) : (
-                  <Send size={16} />
-                )}
+                <Send size={20} />
               </button>
             </div>
           </div>
+          
+          {advancedMode && (
+            <div className="flex justify-center mt-2 text-xs text-gray-500">
+              <span>Using {advancedMode ? 'Gemini AI' : 'LLaMA'} model. {selectedLanguage.code !== 'en-IN' && `Responding in ${selectedLanguage.name}.`}</span>
+            </div>
+          )}
         </div>
       </div>
-      <style jsx global>{`
-        @keyframes fadeIn {
-          0% { opacity: 0; transform: translateY(10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out forwards;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: .5; }
-        }
-        .animate-pulse {
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        /* Markdown styling */
-        .markdown h1, .markdown h2, .markdown h3 {
-          font-weight: bold;
-          margin-bottom: 0.5rem;
-        }
-        .markdown h1 {
-          font-size: 1.5rem;
-        }
-        .markdown h2 {
-          font-size: 1.25rem;
-        }
-        .markdown h3 {
-          font-size: 1rem;
-        }
-        .markdown p {
-          margin-bottom: 0.5rem;
-        }
-        .markdown ul, .markdown ol {
-          margin-left: 1.5rem;
-          margin-bottom: 0.5rem;
-        }
-        .markdown li {
-          margin-bottom: 0.25rem;
-        }
-        .markdown table {
-          border-collapse: collapse;
-          margin-bottom: 0.5rem;
-        }
-        .markdown th, .markdown td {
-          border: 1px solid #ccc;
-          padding: 0.25rem 0.5rem;
-        }
-        .markdown th {
-          background-color: #f5f5f5;
-        }
-        .markdown code {
-          background-color: #f5f5f5;
-          padding: 0.125rem 0.25rem;
-          border-radius: 0.25rem;
-        }
-        .markdown pre {
-          background-color: #f5f5f5;
-          padding: 0.5rem;
-          border-radius: 0.25rem;
-          overflow-x: auto;
-        }
-      `}</style>
     </div>
   );
 };

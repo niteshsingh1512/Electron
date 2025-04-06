@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 from flask import Flask, jsonify
+from flask_cors import CORS  # Import CORS
 import subprocess
 import json
 import psutil
@@ -9,7 +10,10 @@ import datetime
 from collections import defaultdict
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
+# Alternatively, you can enable CORS for specific routes:
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 @app.route('/clear_temp_files', methods=['POST'])
 def clear_temp_files():

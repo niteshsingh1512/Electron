@@ -29,7 +29,7 @@ export default function UpdatesPage() {
       setIsLoading(true);
       
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       const mockUpdates = [
         {
